@@ -1,0 +1,17 @@
+{
+  "name": "generador-horarios",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "api:dev": "pnpm --filter api run start:dev",
+    "web:dev": "pnpm --filter web run dev",
+    "db:migrate": "pnpm --filter @horarios/database run migrate",
+    "db:seed": "pnpm --filter @horarios/database run seed",
+    "db:studio": "pnpm --filter @horarios/database run studio"
+  },
+  "devDependencies": { 
+    "turbo": "^2.3.0" 
+  },
+  "packageManager": "pnpm@9.15.0"
+}

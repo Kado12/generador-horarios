@@ -1,0 +1,193 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  COORDINADOR
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         Role
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  @@map("users")
+}
+
+// ==================== ESTRUCTURA ====================
+
+model Sede {
+  id        String      @id @default(cuid())
+  name      String      @unique
+  classrooms Classroom[]
+  teachers  TeacherSede[]
+  @@map("sedes")
+}
+
+model Turno {
+  id         String    @id @default(cuid())
+  name       String    @unique   // Mañana, Noche
+  slot1Start String    // "08:00"
+  slot1End   String    // "11:00"
+  slot2Start String    // "11:00"
+  slot2End   String    // "14:00"
+  sections   Section[]
+  teachers   TeacherTurno[]
+  @@map("turnos")
+}
+
+model Classroom {
+  id       String    @id @default(cuid())
+  name     String    // "A11"
+  sedeId   String
+  sede     Sede      @relation(fields: [sedeId], references: [id], onDelete: Cascade)
+  sections Section[]
+  @@unique([name, sedeId])
+  @@map("classrooms")
+}
+
+// SECCIÓN = Salón + Turno ("A11 - M")
+model Section {
+  id          String            @id @default(cuid())
+  name        String            // "A11 - M"
+  classroomId String
+  turnoId     String
+  classroom   Classroom         @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  turno       Turno             @relation(fields: [turnoId], references: [id], onDelete: Cascade)
+  sessions    ScheduleSession[]
+  @@unique([classroomId, turnoId])
+  @@map("sections")
+}
+
+// ==================== ACADÉMICO ====================
+
+model Course {
+  id            String          @id @default(cuid())
+  name          String          @unique
+  blockCourses  BlockCourse[]
+  teacherCourses TeacherCourse[]
+  sessions      ScheduleSession[]
+  @@map("courses")
+}
+
+model Period {
+  id        String   @id @default(cuid())
+  name      String   @unique  // "2026"
+  startDate DateTime
+  weeks     Int      @default(12)
+  isActive  Boolean  @default(true)
+  blocks    Block[]
+  @@map("periods")
+}
+
+model Block {
+  id           String            @id @default(cuid())
+  periodId     String
+  name         String            // "Bloque 1"
+  startWeek    Int
+  endWeek      Int
+  period       Period            @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  courses      BlockCourse[]
+  sessions     ScheduleSession[]
+  @@unique([periodId, name])
+  @@map("blocks")
+}
+
+// Los 10 cursos que se imparten en un bloque
+model BlockCourse {
+  id       String @id @default(cuid())
+  blockId  String
+  courseId String
+  block    Block  @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  @@unique([blockId, courseId])
+  @@map("block_courses")
+}
+
+// ==================== DOCENTES ====================
+
+model Teacher {
+  id                 String              @id @default(cuid())
+  firstName          String
+  lastName           String
+  dni                String              @unique
+  phone              String?
+  email              String?
+  isActive           Boolean             @default(true)
+  maxSessionsPerWeek Int?                // null = sin límite
+  courses            TeacherCourse[]
+  turnos             TeacherTurno[]      // vacía = todos los turnos
+  sedes              TeacherSede[]       // vacía = todas las sedes
+  unavailableDays    TeacherUnavailableDay[]
+  sessions           ScheduleSession[]
+  @@map("teachers")
+}
+
+model TeacherCourse {
+  teacherId String
+  courseId  String
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  @@unique([teacherId, courseId])
+  @@map("teacher_courses")
+}
+
+model TeacherTurno {
+  teacherId String
+  turnoId   String
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  turno     Turno   @relation(fields: [turnoId], references: [id], onDelete: Cascade)
+  @@unique([teacherId, turnoId])
+  @@map("teacher_turnos")
+}
+
+model TeacherSede {
+  teacherId String
+  sedeId    String
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  sede      Sede    @relation(fields: [sedeId], references: [id], onDelete: Cascade)
+  @@unique([teacherId, sedeId])
+  @@map("teacher_sedes")
+}
+
+model TeacherUnavailableDay {
+  teacherId String
+  dayOfWeek Int     // 1=Lunes ... 5=Viernes
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  @@unique([teacherId, dayOfWeek])
+  @@map("teacher_unavailable_days")
+}
+
+// ==================== RESULTADO DEL GENERADOR ====================
+
+model ScheduleSession {
+  id        String @id @default(cuid())
+  sectionId String
+  courseId  String
+  teacherId String
+  blockId   String
+  dayOfWeek Int    // 1-5
+  slot      Int    // 1 o 2
+
+  section   Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  block     Block   @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  // REGLAS DURAS garantizadas por la BD:
+  @@unique([sectionId, dayOfWeek, slot])   // 1 curso por sección por slot
+  @@unique([teacherId, dayOfWeek, slot])   // docente no puede duplicarse
+  @@unique([sectionId, courseId])          // cada curso 1 vez por sección/semana
+  @@map("schedule_sessions")
+}
