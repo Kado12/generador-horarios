@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, UseGuards, Res } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { StructureService } from './structure.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@horarios/database';
+import { Response } from 'express';
 
 @ApiTags('Estructura')
 @ApiBearerAuth()
@@ -48,4 +49,19 @@ export class StructureController {
   @Delete('classrooms/:id')
   @Roles(Role.ADMIN)
   deleteClassroom(@Param('id') id: string) { return this.svc.deleteClassroom(id); }
+
+    // ===== SECCIONES =====
+  @Get('sections')
+  @Roles(Role.ADMIN, Role.COORDINADOR)
+  listSections() { return this.svc.listSections(); }
+
+  @Post('sections')
+  @Roles(Role.ADMIN)
+  createSection(@Body() body: { name?: string; classroomId: string; turnoId: string }) {
+    return this.svc.createSection(body);
+  }
+
+  @Delete('sections/:id')
+  @Roles(Role.ADMIN)
+  deleteSection(@Param('id') id: string) { return this.svc.deleteSection(id); }
 }

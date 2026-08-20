@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class StructureService {
@@ -102,5 +103,49 @@ export class StructureService {
       await tx.section.deleteMany({ where: { classroomId: id } });
       return tx.classroom.delete({ where: { id } });
     });
+  }
+
+    // ===== SECCIONES =====
+  async listSections() {
+    return this.prisma.section.findMany({
+      include: {
+        classroom: { include: { sede: true } },
+        turno: true,
+        _count: { select: { sessions: true } },
+      },
+      orderBy: [
+        { classroom: { sede: { name: 'asc' } } },
+        { name: 'asc' },
+      ],
+    });
+  }
+
+  async createSection(data: { name?: string; classroomId: string; turnoId: string }) {
+    const exists = await this.prisma.section.findFirst({
+      where: { classroomId: data.classroomId, turnoId: data.turnoId },
+    });
+    if (exists) {
+      throw new ConflictException('Ya existe una sección para ese salón y turno');
+    }
+
+    const [classroom, turno] = await Promise.all([
+      this.prisma.classroom.findUnique({ where: { id: data.classroomId } }),
+      this.prisma.turno.findUnique({ where: { id: data.turnoId } }),
+    ]);
+    if (!classroom || !turno) throw new NotFoundException('Salón o turno no encontrado');
+
+    const name = data.name || `${classroom.name} - ${turno.name.charAt(0)}`;
+    return this.prisma.section.create({
+      data: { name, classroomId: data.classroomId, turnoId: data.turnoId },
+      include: { classroom: { include: { sede: true } }, turno: true },
+    });
+  }
+
+  async deleteSection(id: string) {
+    const count = await this.prisma.scheduleSession.count({ where: { sectionId: id } });
+    if (count > 0) {
+      throw new ConflictException('La sección tiene sesiones de horario. Limpia el bloque primero.');
+    }
+    return this.prisma.section.delete({ where: { id } });
   }
 }

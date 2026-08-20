@@ -8,6 +8,9 @@ import { StructurePage } from './pages/StructurePage';
 import { CoursesPage } from './pages/CoursesPage';
 import { PeriodsPage } from './pages/PeriodsPage';
 import { TeachersPage, TeacherDetailPage } from './pages/TeachersPage';
+import { SchedulerPage } from './pages/SchedulerPage';
+import { SectionsPage } from './pages/SectionsPage';
+import { ImportsPage } from './pages/ImportsPAge';
 
 const Home: React.FC = () => (
   <div>
@@ -49,6 +52,9 @@ const App: React.FC = () => (
             <Route path="/periods" element={<PeriodsPage />} />
             <Route path="/teachers" element={<TeachersPage />} />
             <Route path="/teachers/:id" element={<TeacherDetailPage />} />
+            <Route path="/scheduler" element={<SchedulerPage />} />
+            <Route path="/sections" element={<SectionsPage />} />
+            <Route path="/imports" element={<ImportsPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

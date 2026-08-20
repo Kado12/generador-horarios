@@ -7,7 +7,10 @@ const menu = [
   { path: '/structure', label: '🏫 Estructura' },
   { path: '/courses', label: '📘 Cursos' },
   { path: '/periods', label: '📅 Períodos / Bloques' },
+  { path: '/sections', label: '📋 Secciones' },
   { path: '/teachers', label: '👨‍🏫 Docentes' },
+  { path: '/scheduler', label: '🧠 Generador' },
+  { path: '/imports', label: '📥 Importar' },
 ];
 
 export const Layout: React.FC = () => {

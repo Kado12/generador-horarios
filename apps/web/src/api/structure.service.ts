@@ -30,6 +30,14 @@ export interface Turno {
   slot2End: string;
 }
 
+export interface SectionFull {
+  id: string;
+  name: string;
+  classroom: { id: string; name: string; sede: { name: string } };
+  turno: { id: string; name: string };
+  _count: { sessions: number };
+}
+
 export const structureService = {
   // Sedes
   async listSedes(): Promise<Sede[]> {
@@ -57,5 +65,15 @@ export const structureService = {
   },
   async deleteClassroom(id: string) {
     return (await api.delete(`/api/structure/classrooms/${id}`)).data;
+  },
+  // dentro de structureService:
+  async listSections(): Promise<SectionFull[]> {
+    return (await api.get('/api/structure/sections')).data;
+  },
+  async createSection(data: { name?: string; classroomId: string; turnoId: string }) {
+    return (await api.post('/api/structure/sections', data)).data;
+  },
+  async deleteSection(id: string) {
+    return (await api.delete(`/api/structure/sections/${id}`)).data;
   },
 };
