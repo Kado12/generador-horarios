@@ -3,11 +3,20 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "build": "turbo run build",
     "dev": "turbo run dev",
     "api:dev": "pnpm --filter api run start:dev",
+    "api:build": "pnpm --filter api run build",
     "web:dev": "pnpm --filter web run dev",
+    "web:build": "pnpm --filter web run build",
     "db:migrate": "pnpm --filter @horarios/database run migrate",
+    "db:generate": "pnpm --filter @horarios/database run generate",
+    "db:build": "pnpm --filter @horarios/database run build",
+    "db:reset": "docker compose down -v",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
     "db:seed": "pnpm --filter @horarios/database run seed",
+    "db:seedA": "pnpm --filter @horarios/database run seedA",
     "db:studio": "pnpm --filter @horarios/database run studio"
   },
   "devDependencies": { 
